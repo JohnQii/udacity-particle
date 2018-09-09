@@ -141,8 +141,9 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
   //   and the following is a good resource for the actual equation to implement (look at equation
   //   3.33
   //   http://planning.cs.uiuc.edu/node99.html
-  LandmarkObs converted_obs;
-  LandmarkObs best_landmark;
+
+  double normalizer = (1.0/(2.0 * M_PI * std_landmark[0] * std_landmark[1]));
+  double weight_normalizer = 0.0;
   for (int i = 0; i < num_particles; i++)
   {
     //0. get particles
@@ -154,9 +155,9 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     std::vector<LandmarkObs> transformed_observations;
     for(unsigned int j = 0; j < observations.size(); j++)
     {
-      double xx = cos(par_theta)*observations[j].x - sin(par_theta)*observations[j].y + par_x;
-      double yy = sin(par_theta)*observations[j].x + cos(par_theta)*observations[j].y + par_y;
-      transformed_observations.push_back(LandmarkObs{ observations[j].id, xx, yy });
+      double x = cos(par_theta)*observations[j].x - sin(par_theta)*observations[j].y + par_x;
+      double y = sin(par_theta)*observations[j].x + cos(par_theta)*observations[j].y + par_y;
+      transformed_observations.push_back(LandmarkObs{ observations[j].id, x, y });
     }
 
     //2. find the map landmarks which are in range.
@@ -170,9 +171,39 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
       }
     }
 
-    //3.
-  }
+    //3. dataAssociation
+    dataAssociation(ranged_landmarks, transformed_observations);
 
+    //4. Calculate weights.
+    particles[i].weight = 1.0;
+
+    for(uint j = 0; j < transformed_observations.size(); ++j)
+    {
+      double trans_x = transformed_observations[j].x;
+      double trans_y = transformed_observations[j].y;
+      double trans_id = transformed_observations[j].id;
+      double multi_prob = 1.0;
+
+      for (uint k = 0; k < ranged_landmarks.size(); ++k) {
+        double landmark_x = ranged_landmarks[k].x;
+        double landmark_y = ranged_landmarks[k].y;
+        double landmark_id = ranged_landmarks[k].id;
+
+        if (trans_id == landmark_id) {
+          multi_prob = normalizer * exp(-1.0 * ((pow((trans_x - landmark_x), 2)/(2.0 * std_landmark[0] * std_landmark[0]))
+                       + (pow((trans_y - landmark_y), 2)/(2.0 * std_landmark[1] * std_landmark[1]))));
+          particles[i].weight *= multi_prob;
+        }
+      }
+    }
+    weight_normalizer += particles[i].weight;
+  }
+  //
+  for (uint i = 0; i < particles.size(); i++)
+  {
+    particles[i].weight /= weight_normalizer;
+    weights[i] = particles[i].weight;
+  }
 }
 
 void ParticleFilter::resample() {
