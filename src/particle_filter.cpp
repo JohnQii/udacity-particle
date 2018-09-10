@@ -5,15 +5,7 @@
  *      Author: Tiffany Huang
  */
 
-#include <random>
-#include <algorithm>
-#include <iostream>
-#include <numeric>
-#include <math.h> 
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <iterator>
+
 
 #include "particle_filter.h"
 
@@ -43,14 +35,14 @@ void ParticleFilter::init(double x, double y, double theta, double std[], double
   // Add random Gaussian noise to each particle.
 
   //init it!
-  default_random_engine gen;
+
   for (int i = 0; i < num_particles; i++)
   {
     Particle particle;
     particle.id = i;
-    particle.x = dist_x(gen);
-    particle.y = dist_y(gen);
-    particle.theta = dist_theta(gen);
+    particle.x = dist_x(gen_);
+    particle.y = dist_y(gen_);
+    particle.theta = dist_theta(gen_);
     particle.weight = 1.0;
 
     particles.push_back(particle);
@@ -66,7 +58,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
   // NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
   //  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
   //  http://www.cplusplus.com/reference/random/default_random_engine/
-  default_random_engine gen;
+//  default_random_engine gen;
   //normal distributions for noise
   normal_distribution<double> dist_x(0.0, std_pos[0]);
   normal_distribution<double> dist_y(0.0, std_pos[1]);
@@ -90,9 +82,9 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
     }
 
     // add noise.
-    particles[i].x += dist_x(gen);
-    particles[i].y += dist_y(gen);
-    particles[i].theta += dist_theta(gen);
+    particles[i].x += dist_x(gen_);
+    particles[i].y += dist_y(gen_);
+    particles[i].theta += dist_theta(gen_);
   }
 
 }

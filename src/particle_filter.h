@@ -10,7 +10,15 @@
 #define PARTICLE_FILTER_H_
 
 #include "helper_functions.h"
-
+#include <random>
+#include <algorithm>
+#include <iostream>
+#include <numeric>
+#include <math.h>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <iterator>
 struct Particle {
 
     int id;
@@ -117,6 +125,7 @@ class ParticleFilter {
     }
   private:
     double yaw_eps_;
+    std::default_random_engine gen_;
 };
 
 
