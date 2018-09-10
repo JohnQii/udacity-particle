@@ -141,7 +141,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
   //   and the following is a good resource for the actual equation to implement (look at equation
   //   3.33
   //   http://planning.cs.uiuc.edu/node99.html
-
+  weights.clear();
   double normalizer = (1.0/(2.0 * M_PI * std_landmark[0] * std_landmark[1]));
   double weight_normalizer = 0.0;
   for (int i = 0; i < num_particles; i++)
@@ -198,11 +198,11 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     }
     weight_normalizer += particles[i].weight;
   }
-  //
+  //normalised
   for (uint i = 0; i < particles.size(); i++)
   {
     particles[i].weight /= weight_normalizer;
-    weights[i] = particles[i].weight;
+    weights.push_back(particles[i].weight);
   }
 }
 
@@ -210,7 +210,31 @@ void ParticleFilter::resample() {
   // TODO: Resample particles with replacement with probability proportional to their weight.
   // NOTE: You may find std::discrete_distribution helpful here.
   //   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
+  vector<Particle> resampled_particles;
 
+  // Create a generator to be used for generating random particle index and beta value
+  default_random_engine gen;
+
+  //Generate random particle index
+  uniform_int_distribution<int> particle_index(0, num_particles - 1);
+
+  int current_index = particle_index(gen);
+
+  double beta = 0.0;
+
+  double max_weight_2 = 2.0 * *max_element(weights.begin(), weights.end());
+
+  for (int i = 0; i < particles.size(); i++) {
+    uniform_real_distribution<double> random_weight(0.0, max_weight_2);
+    beta += random_weight(gen);
+
+    while (beta > weights[current_index]) {
+      beta -= weights[current_index];
+      current_index = (current_index + 1) % num_particles;
+    }
+    resampled_particles.push_back(particles[current_index]);
+  }
+  particles = resampled_particles;
 }
 
 Particle ParticleFilter::SetAssociations(Particle& particle, const std::vector<int>& associations, 
